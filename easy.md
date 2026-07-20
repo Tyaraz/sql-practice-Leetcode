@@ -542,6 +542,260 @@ WHERE bonus is NULL or bonus < 1000;
 ```
 Keep every rows in Employee table (Employee LEFT JOIN Bonus) and cross them with criteria.
 
+## 12. Students and Examinations
+
+### Problem Description
+Write a solution to find the number of times each student attended each exam.
+
+Return the result table ordered by student_id and subject_name.
+
+### Schema
+Students
+| Column Name | Type |
+| --- | --- |
+| student_id | int |
+| student_name | varchar |
+
+Subjects
+| Column Name | Type |
+| --- | --- |
+| subject_name | varchar |
+
+Examination
+| Column Name | Type |
+| --- | --- |
+| student_id | int |
+| subject_name | varchar |
+
+### Students table:
+| student_id | student_name |
+| --- | --- |
+| 1 | Alice |
+| 2 | Bob |
+| 13 | John |
+| 6 | Alex |
+
+Subjects table:
+| subject_name |
+| --- |
+| Math |
+Physics |
+| Programming |
+
+Examinations table:
+| student_id | subject_name |
+| --- | --- |
+| 1 | Math |
+| 1 | Physics |
+| 1 | Programming |
+| 2 | Programming |
+| 1 | Physics |
+| 1 | Math |
+| 13 | Math |
+| 13 | Programming |
+| 13 | Physics |
+| 2 | Math |
+| 1 | Math |
+
+### Output table:
+```text
++------------+--------------+--------------+----------------+
+| student_id | student_name | subject_name | attended_exams |
++------------+--------------+--------------+----------------+
+| 1          | Alice        | Math         | 3              |
+| 1          | Alice        | Physics      | 2              |
+| 1          | Alice        | Programming  | 1              |
+| 2          | Bob          | Math         | 1              |
+| 2          | Bob          | Physics      | 0              |
+| 2          | Bob          | Programming  | 1              |
+| 6          | Alex         | Math         | 0              |
+| 6          | Alex         | Physics      | 0              |
+| 6          | Alex         | Programming  | 0              |
+| 13         | John         | Math         | 1              |
+| 13         | John         | Physics      | 1              |
+| 13         | John         | Programming  | 1              |
++------------+--------------+--------------+----------------+
+```
+## Solution
+```sql
+SELECT  stu.student_id, stu.student_name, sub.subject_name, COUNT(ex.subject_name) AS attended_exams
+FROM Students stu
+CROSS JOIN Subjects sub
+LEFT JOIN Examination ex
+ON  stu.student_id = ex.student_id
+AND sub.subject_name = ex.subject_name
+GROUP BY stu.student_id, stu.student_name, sub.subject_name
+ORDER_BY stu.student_id, sub.subject_name;
+```
+Result should contain all students and subjects. 
+1. Draft SELECT command to produce column name needed.
+2. Use CROSS JOIN to match Students with every subjects to create all possible combination.
+3. LEFT JOIN to Examination using student_id from Students and subject_name from Subjects. This create a list that put everything in place even the NULL ones.
+4. GROUP BY will collapse similar rows into 1
+5. COUNT(ex.subject_name) will run together with GROUP BY and calculate the appearance of rows.
+
+## 15. Not Boring Movies
+
+### Problem Description
+Write a solution to report the movies with an odd-numbered ID and a description that is not "boring".
+
+Return the result table ordered by rating in descending order.
+
+### Schema
+Cinema
+| Column Name | Type |
+| --- | --- |
+| id | int |
+| movie | varchar |
+| description | varchar |
+| rating | float |
+
+### Cinema table:
+| id | movie  | description | rating |
+| --- | --- | -- | -- | -- |
+| 1 | War | great 3D | 8.9 |
+| 2 | Science | fiction | 8.5 |
+| 3 | irish | boring | 6.2 |
+| 4 | Ice song | Fantasy | 8.6 |
+| 5 | House card | Interesting | 9.1 |
+
+
+### Output table:
+```text
++----+------------+-------------+--------+
+| id | movie      | description | rating |
++----+------------+-------------+--------+
+| 1  | War        | great 3D    | 8.9    |
+| 2  | Science    | fiction     | 8.5    |
+| 3  | irish      | boring      | 6.2    |
+| 4  | Ice song   | Fantasy     | 8.6    |
+| 5  | House card | Interesting | 9.1    |
++----+------------+-------------+--------+
+```
+## Solution
+```sql
+SELECT  id, movie, description, rating
+FROM Cinema
+WHERE description <> 'boring' ABD id % 2 = 1
+ORDER_BY rating DESC;
+```
+
+## 15. Average Selling Price
+
+### Problem Description
+Write a solution to find the average selling price for each product. average_price should be rounded to 2 decimal places. If a product does not have any sold units, its average selling price is assumed to be 0.
+
+Return the result table in any order.
+
+### Schema
+Prices
+| Column Name | Type |
+| --- | --- |
+| product_id | int |
+| start_date | date |
+| end_date | date |
+| price | int |
+
+UnitsSold
+| Column Name | Type |
+| --- | --- |
+| product_id | int |
+| purchase_date | date |
+| units | int |
+
+### Prices table:
+| product_id | start_date  | end_date | price |
+| --- | --- | -- | -- |
+| 1 | 2019-02-17 | 2019-02-28 | 5 |
+| 1 | 2019-03-01 | 2019-03-22 | 20 |
+| 2 | 2019-02-01 | 2019-02-20 | 15 |
+| 2 | 2019-02-21 | 2019-03-31 | 30 |
+
+UnitsSold table:
+| product_id | purchase_date  | units |
+| --- | --- | -- |
+| 1 | 2019-02-17 | 2019-02-28 |
+| 1 | 2019-03-01 | 2019-03-22 |
+| 2 | 2019-02-01 | 2019-02-20 |
+| 2 | 2019-02-21 | 2019-03-31 |
+
+### Output table:
+```text
++------------+---------------+
+| product_id | average_price |
++------------+---------------+
+| 1          | 6.96          |
+| 2          | 16.96         |
++------------+---------------+
+```
+## Solution
+```sql
+SELECT p.product_id, IFNULL(ROUND(SUM(units * price)/sum(units),2),0) AS average_price
+FROM Prices p
+LEFT JOIN UnitsSold s
+ON p.product_id = u.product_id
+AND u.purchase_date BETWEEN start_date AND end_date
+GROUP BY product_id;
+```
+
+## 16. Project Employee I
+
+### Problem Description
+Write a solution that reports the average experience years of all the employees for each project, rounded to 2 digits.
+
+Return the result table in any order.
+
+### Schema
+Project
+| Column Name | Type |
+| --- | --- |
+| product_id | int |
+| employee_id | int |
+
+Employee
+| Column Name | Type |
+| --- | --- |
+| employee_id | int |
+| name | varchar |
+| experience_years | int |
+
+### Project table:
+| product_id | employee_id |
+| --- | --- |
+| 1 | 1 |
+| 1 | 2 |
+| 1 | 3 |
+| 2 | 1 |
+| 2 | 4 |
+
+### Employee table:
+| employee_id | name | experience_years |
+| --- | --- | --- |
+| 1 | Khaled | 3 |
+| 1 | Ali | 2 |
+| 2 | John | 1 |
+| 2 | Doe | 2 |
+
+### Output table:
+```text
++------------+---------------+
+| project_id | average_years |
++------------+---------------+
+| 1          | 2.00          |
+| 2          | 2.50          |
++------------+---------------+
+```
+## Solution
+```sql
+SELECT p.project_id, ROUND(AVERAGE(e.experience_years) ,2) AS average_years
+FROM Project p
+LEFT JOIN Employee e
+ON p.employee_id = e.employee_id
+GROUP BY product_id;
+```
+Average can be calculated by using experience_years without defining formula as we already bounded the equation using GROUP BY product_id. SQL will separate data acc to project_id. Then it gathers matching employees. AVG then calculate experience years that is not null and divide the sum with count. 
+
+
 
 
 
